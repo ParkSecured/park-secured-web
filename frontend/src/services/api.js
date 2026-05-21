@@ -141,11 +141,15 @@ function generatedCnp(employee) {
 
 function mapCloudUser(user) {
   return {
-    id: user.userId,
+    id: user.accountId ?? user.userId,
+    accountId: user.accountId ?? user.userId,
     email: user.email,
     name: user.email?.split("@")[0] || "Utilizator ParkSecured",
     role: user.role,
     department: user.divisionId ? `Divizia ${user.divisionId}` : "Global",
+    divisionId: user.divisionId,
+    employeeId: user.employeeId,
+    isActive: user.isActive,
   };
 }
 
@@ -253,10 +257,10 @@ export async function loginRequest({ email, password }) {
 export async function getEmployees() {
   try {
     const employees = await request("/employees");
-    return employees.map(mapCloudEmployee);
+    return employees.map(mapCloudEmployee).filter((employee) => employee.isActive);
   } catch (error) {
     await wait();
-    return [...fallbackEmployees];
+    return fallbackEmployees.filter((employee) => employee.isActive !== false);
   }
 }
 
@@ -279,6 +283,35 @@ export async function saveEmployee(employee) {
     return employee.id
       ? { ...employee }
       : { ...employee, id: Date.now(), employeeId: Date.now(), status: "Activ" };
+  }
+}
+
+export async function createDivisionManager({ email, password, divisionId }) {
+  return request("/users", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password,
+      role: "division_manager",
+      divisionId: Number(divisionId),
+      isActive: true,
+    }),
+  });
+}
+
+export async function deleteEmployee(employee) {
+  try {
+    const employeeId = employee.employeeId || employee.id;
+
+    await request(`/employees/${employeeId}/toggle-access`, {
+      method: "PATCH",
+      body: JSON.stringify({ isActive: false }),
+    });
+
+    return employeeId;
+  } catch (error) {
+    await wait();
+    return employee.employeeId || employee.id;
   }
 }
 

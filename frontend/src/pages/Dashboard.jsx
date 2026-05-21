@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import AccessLogTable from "../components/AccessLogTable.jsx";
+import ClockCard from "../components/ClockCard.jsx";
 import GateStatusCard from "../components/GateStatusCard.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import { ROLES } from "../config/permissions.js";
 import {
   getAccessLogs,
   getEmployees,
@@ -8,29 +11,8 @@ import {
   validateAccess,
 } from "../services/api.js";
 
-function CurrentTime() {
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="clock-card">
-      <span>Ora curenta</span>
-      <strong>
-        {new Intl.DateTimeFormat("ro-RO", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }).format(now)}
-      </strong>
-    </div>
-  );
-}
-
 export default function Dashboard() {
+  const { user } = useAuth();
   const [gateStatus, setGateStatus] = useState(null);
   const [logs, setLogs] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -71,6 +53,7 @@ export default function Dashboard() {
     () => employees.find((employee) => employee.id === latestLog?.employeeId),
     [employees, latestLog],
   );
+  const canOperateGate = [ROLES.ADMIN, ROLES.OPERATOR].includes(user?.role);
 
   return (
     <div className="page-grid">
@@ -83,7 +66,7 @@ export default function Dashboard() {
             centralizate pentru operatorul de la poarta.
           </p>
         </div>
-        <CurrentTime />
+        <ClockCard />
       </section>
 
       <div className="dashboard-layout">
@@ -108,22 +91,26 @@ export default function Dashboard() {
               </span>
             </div>
           </div>
-          <div className="action-row">
-            <button
-              className="primary-button"
-              type="button"
-              onClick={() => handleValidateAccess("1234")}
-            >
-              Permite acces
-            </button>
-            <button
-              className="danger-button"
-              type="button"
-              onClick={() => handleValidateAccess("INVALID")}
-            >
-              Interzice manual
-            </button>
-          </div>
+          {canOperateGate ? (
+            <div className="action-row">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => handleValidateAccess("1234")}
+              >
+                Permite acces
+              </button>
+              <button
+                className="danger-button"
+                type="button"
+                onClick={() => handleValidateAccess("INVALID")}
+              >
+                Interzice manual
+              </button>
+            </div>
+          ) : (
+            <p className="muted-copy">Rolul curent are acces doar la monitorizare.</p>
+          )}
           {accessMessage && <p className="inline-feedback">{accessMessage}</p>}
         </section>
       </div>

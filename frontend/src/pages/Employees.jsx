@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import EmployeeTable from "../components/EmployeeTable.jsx";
-import { getEmployees, saveEmployee } from "../services/api.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { ROLES } from "../config/permissions.js";
+import { deleteEmployee, getEmployees, saveEmployee } from "../services/api.js";
 
 const emptyEmployee = {
   name: "",
@@ -16,9 +18,13 @@ const emptyEmployee = {
 };
 
 export default function Employees() {
+  const { user } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState(null);
+  const canCreate = [ROLES.ADMIN, ROLES.HR].includes(user?.role);
+  const canEdit = [ROLES.ADMIN, ROLES.HR, ROLES.DIVISION_MANAGER].includes(user?.role);
+  const canDelete = user?.role === ROLES.ADMIN;
 
   useEffect(() => {
     getEmployees().then(setEmployees);
@@ -60,6 +66,22 @@ export default function Employees() {
     setEditing(null);
   };
 
+  const handleDelete = async (employee) => {
+    if (!canDelete) return;
+
+    const confirmed = window.confirm(
+      `Stergi angajatul ${employee.name}? Acesta va fi dezactivat si eliminat din lista.`,
+    );
+
+    if (!confirmed) return;
+
+    const deletedEmployeeId = await deleteEmployee(employee);
+
+    setEmployees((current) =>
+      current.filter((item) => (item.employeeId || item.id) !== deletedEmployeeId),
+    );
+  };
+
   return (
     <div className="page-grid">
       <section className="section-heading page-heading">
@@ -67,9 +89,11 @@ export default function Employees() {
           <p className="eyebrow">Administrare</p>
           <h2>Angajati si drepturi de acces</h2>
         </div>
-        <button className="primary-button" type="button" onClick={() => setEditing(emptyEmployee)}>
-          Adauga angajat
-        </button>
+        {canCreate && (
+          <button className="primary-button" type="button" onClick={() => setEditing(emptyEmployee)}>
+            Adauga angajat
+          </button>
+        )}
       </section>
 
       <section className="card">
@@ -83,10 +107,16 @@ export default function Employees() {
           />
           <span className="badge info">{filteredEmployees.length} rezultate</span>
         </div>
-        <EmployeeTable employees={filteredEmployees} onEdit={setEditing} />
+        <EmployeeTable
+          canDelete={canDelete}
+          canEdit={canEdit}
+          employees={filteredEmployees}
+          onDelete={handleDelete}
+          onEdit={setEditing}
+        />
       </section>
 
-      {editing && (
+      {editing && canEdit && (
         <section className="card form-card">
           <div className="section-heading">
             <div>

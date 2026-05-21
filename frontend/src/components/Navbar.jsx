@@ -1,4 +1,5 @@
 import { useAuth } from "../context/AuthContext.jsx";
+import { ROLE_LABELS } from "../config/permissions.js";
 
 const formatter = new Intl.DateTimeFormat("ro-RO", {
   weekday: "long",
@@ -22,7 +23,7 @@ export default function Navbar() {
           <span className="avatar">{user?.name?.slice(0, 1) || "U"}</span>
           <div>
             <strong>{user?.name}</strong>
-            <span>{user?.role}</span>
+            <span>{ROLE_LABELS[user?.role] || user?.role}</span>
           </div>
         </div>
         <button className="ghost-button" type="button" onClick={logout}>

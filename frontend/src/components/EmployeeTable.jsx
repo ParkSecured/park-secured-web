@@ -1,4 +1,10 @@
-export default function EmployeeTable({ employees = [], onEdit }) {
+export default function EmployeeTable({
+  canDelete = false,
+  canEdit = false,
+  employees = [],
+  onDelete,
+  onEdit,
+}) {
   // Verificăm dacă employees este valid, altfel afișăm un mesaj
   if (!employees || employees.length === 0) {
     return <div className="p-8 text-center">Nu s-au găsit angajați.</div>;
@@ -51,13 +57,25 @@ export default function EmployeeTable({ employees = [], onEdit }) {
                 </span>
               </td>
               <td className="table-actions">
-                <button 
-                  type="button" 
-                  className="ghost-button" 
-                  onClick={() => onEdit && onEdit(employee)}
-                >
-                  Editare
-                </button>
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => onEdit && onEdit(employee)}
+                  >
+                    Editare
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    type="button"
+                    className="danger-button"
+                    onClick={() => onDelete && onDelete(employee)}
+                  >
+                    Sterge
+                  </button>
+                )}
+                {!canEdit && !canDelete && <span className="muted-copy">Citire</span>}
               </td>
             </tr>
           ))}

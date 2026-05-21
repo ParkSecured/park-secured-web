@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
+import { ROLES } from "../config/permissions.js";
 import { getReports } from "../services/api.js";
 
 export default function Reports() {
+  const { user } = useAuth();
   const [reports, setReports] = useState(null);
+  const canExport = [ROLES.ADMIN, ROLES.HR, ROLES.DIVISION_MANAGER].includes(user?.role);
 
   useEffect(() => {
     getReports().then(setReports);
@@ -27,14 +31,15 @@ export default function Reports() {
           <p className="eyebrow">Rapoarte</p>
           <h2>Prezenta si activitate pe departamente</h2>
         </div>
-        {/* Am legat functia handleExportCSV de butonul de mai jos */}
-        <button 
-          className="ghost-button" 
-          type="button" 
-          onClick={handleExportCSV}
-        >
-          Export CSV
-        </button>
+        {canExport && (
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={handleExportCSV}
+          >
+            Export CSV
+          </button>
+        )}
       </section>
 
       <section className="metrics-grid">

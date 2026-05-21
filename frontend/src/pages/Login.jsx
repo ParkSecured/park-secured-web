@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { getDefaultRouteForRole } from "../config/permissions.js";
 
 export default function Login() {
-  const { authError, isAuthenticated, login } = useAuth();
+  const { authError, isAuthenticated, login, user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("admin@parksecure.local");
   const [password, setPassword] = useState("admin123");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getDefaultRouteForRole(user?.role)} replace />;
   }
 
   const handleSubmit = async (event) => {
@@ -18,8 +19,8 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      await login({ email, password });
-      navigate("/dashboard");
+      const session = await login({ email, password });
+      navigate(getDefaultRouteForRole(session.user.role));
     } finally {
       setIsSubmitting(false);
     }
